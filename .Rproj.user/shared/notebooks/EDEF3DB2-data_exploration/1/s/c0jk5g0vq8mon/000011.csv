@@ -1,6 +1,0 @@
-"0","plot_second_ratings <- ggplot(df, aes(x = factor(SecondRating))) +"
-"0","  geom_bar(fill = 'steelblue') +"
-"0","  labs(title = ""Distribution of ratings after receiving feedback"","
-"0","       x = ""Second rating"","
-"0","       y = ""Count"") +"
-"0","  theme_minimal()"

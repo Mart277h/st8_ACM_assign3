@@ -1,6 +1,0 @@
-"0","plot_group_ratings <- ggplot(df, aes(x = factor(GroupRating))) +"
-"0","  geom_bar(fill = 'steelblue') +"
-"0","  labs(title = ""Distribution of group ratings"","
-"0","       x = ""Group rating"","
-"0","       y = ""Count"") +"
-"0","  theme_minimal()"

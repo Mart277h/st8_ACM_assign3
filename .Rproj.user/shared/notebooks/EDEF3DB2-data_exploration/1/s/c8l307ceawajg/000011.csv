@@ -1,2 +1,0 @@
-"0","rows_with_na <- df[!complete.cases(df), ]"
-"0","rows_with_na"
