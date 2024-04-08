@@ -1,0 +1,6 @@
+"0","plot_change <- ggplot(df, aes(x = factor(Change))) +"
+"0","  geom_bar(fill = 'steelblue') +"
+"0","  labs(title = ""Distribution of rating changes"","
+"0","       x = ""Change in rating after receiving group feedback"","
+"0","       y = ""Count"") +"
+"0","  theme_minimal()"

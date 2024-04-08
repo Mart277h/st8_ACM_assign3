@@ -1,0 +1,8 @@
+"0","df <- df %>% "
+"0","  select(c(ID, "
+"0","           FaceID, "
+"0","           FirstRating, "
+"0","           GroupRating, "
+"0","           SecondRating,"
+"0","           Feedback,"
+"0","           Change))"
