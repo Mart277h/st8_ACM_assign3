@@ -1,0 +1,12 @@
+---
+title: "data_exploration"
+author: "Alina Kereszt"
+date: "2024-04-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
