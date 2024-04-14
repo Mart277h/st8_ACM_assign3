@@ -1,28 +1,47 @@
-
-// The input data is a vector 'y' of length 'N'.
+// 
 data {
   int<lower=0> N;
-  vector[N] y;
+  array[N] real SecondRating; //What we are predicting, our y 
+  array[N] real FirstRating; // The participants first rating
+  array[N] real GroupRating; // The group rating the participant gets
+}
+
+transformed data {
+  array[N] real l_FirstRating; // Creating an array for logit transformed data 
+  array[N] real l_GroupRating;
+  array[N] real l_SecondRating;
+  
+  for (n in 1:N){
+    l_FirstRating[n] = logit((FirstRating[n] + 1)/10); // Doing the logit transformation
+    l_GroupRating[n] = logit((GroupRating[n] + 1)/10);
+    l_SecondRating[n] = logit((SecondRating[n] + 1)/10); // Consider adding the grouprating = 0 on the logit scale? 
+  }
 }
 
 // The parameters accepted by the model. Our model
 // accepts two parameters 'mu' and 'sigma'.
 parameters {
-  real mu;
-  real<lower=0> sigma;
+  real bias; 
+  real st_d; 
 }
 
-transformed parameters {
-  real logit_transformed_source1;
-  real logit_transformed_source1;
-}
-
-// The model to be estimated. We model the output
-// 'y' to be normally distributed with mean 'mu'
-// and standard deviation 'sigma'.
 model {
-  target += ; //priors 
+  target += normal_lpdf(bias | 0, 1); //prior for bias, as this is the only thing we estimate in this model 
+  target += normal_lpdf(st_d | 0, 1);
+  target += normal_lpdf(to_vector(l_SecondRating) | bias + to_vector(l_FirstRating) + to_vector(l_GroupRating), st_d); 
+}
+
+generated quantities{
+  real bias_prior;
+  real sd_prior;
+  array[N] real log_lik;
   
-  target += normal_lpmf(y | bias + to_vector(Source1) + to_vector(Source2)); //beta distribution if transforming, normal distribution if you do logit of transformed parameters
+  bias_prior = normal_rng(0, 1);
+  sd_prior = normal_rng(0, 1);
+  
+  for (n in 1:N){  
+    log_lik[n] = normal_lpdf(l_SecondRating | bias_prior + to_vector(l_FirstRating) + to_vector(l_GroupRating), sd_prior);
+  }
+  
 }
 

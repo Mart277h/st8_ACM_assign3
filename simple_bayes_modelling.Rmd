@@ -1,0 +1,50 @@
+---
+title: "simple_bayes_modelling"
+author: "Martine Lind Jensen"
+date: "2024-04-12"
+output: html_document
+---
+```{r}
+pacman::p_load(cmdstanr)
+```
+
+```{r}
+file <- file.path("simple_sc.stan")
+
+model_simple <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE),
+                     stanc_options = list("O1"))
+```
+
+```{r}
+#remove na's in data 
+
+df <- read_csv("data/data.csv")
+
+df <- na.omit(df)
+
+data <- list(
+  N = 2598, 
+  SecondRating = df$SecondRating, 
+  FirstRating = df$FirstRating, 
+  GroupRating = df$GroupRating
+)
+```
+
+```{r}
+samples_simple_sc <- model_simple$sample(
+  data = data,
+  #fixed_param = TRUE,
+  seed = 123,
+  chains = 2,
+  parallel_chains = 2,
+  threads_per_chain = 2,
+  iter_warmup = 1500,
+  iter_sampling = 3000,
+  refresh = 500
+)
+```
+
+```{r}
+samples_simple_sc$cmdstan_diagnose()
+```
+
