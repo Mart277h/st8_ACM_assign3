@@ -5,7 +5,7 @@ date: "2024-04-12"
 output: html_document
 ---
 ```{r}
-pacman::p_load(cmdstanr)
+pacman::p_load(cmdstanr, tidyverse)
 ```
 
 ```{r}
