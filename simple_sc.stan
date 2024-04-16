@@ -12,9 +12,9 @@ transformed data {
   array[N] real l_SecondRating;
   
   for (n in 1:N){
-    l_FirstRating[n] = logit((FirstRating[n] + 1)/10); // Doing the logit transformation
-    l_GroupRating[n] = logit((GroupRating[n] + 1)/10);
-    l_SecondRating[n] = logit((SecondRating[n] + 1)/10); // Consider adding the grouprating = 0 on the logit scale? 
+    l_FirstRating[n] = logit(FirstRating[n]/9); // Doing the logit transformation
+    l_GroupRating[n] = logit(GroupRating[n]/9);
+    l_SecondRating[n] = logit(SecondRating[n]/9); // Consider adding the grouprating = 0 on the logit scale? 
   }
 }
 
@@ -40,7 +40,7 @@ generated quantities{
   sd_prior = normal_rng(1, 0.1);
   
   for (n in 1:N){  
-    log_lik[n] = normal_lpdf(to_vector(l_SecondRating) | bias_prior + to_vector(l_FirstRating) + to_vector(l_GroupRating), sd_prior);
+    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n] + l_GroupRating[n], sd_prior);
   }
   
 }

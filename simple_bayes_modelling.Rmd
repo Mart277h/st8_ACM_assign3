@@ -5,7 +5,32 @@ date: "2024-04-12"
 output: html_document
 ---
 ```{r}
-pacman::p_load(cmdstanr, tidyverse)
+pacman::p_load(cmdstanr, tidyverse, LaplacesDemon)
+```
+
+
+This needs to be done! 
+```{r}
+#Create function to simulate data 
+
+sim_simple_f <- function()
+
+#Simulate some data 
+
+bias <- 0
+trials <- seq(10)
+Source1 <- seq(1,8, 1)
+Source2 <- seq(1,8, 1)
+
+db <- expand.grid(bias = bias, trials = trials, Source1 = Source1, Source2 = Source2)
+
+for (n in seq(nrow(db))) {
+  db$belief[n] <- SimpleBayes_f(db$bias[n], db$Source1[n], db$Source2[n])
+  db$choice[n] <- rbinom(1,1, db$belief[n])
+  db$continuous[n] <- db$belief[n]*9
+  db$discrete[n] <- round(db$belief[n]*9,0)
+}
+
 ```
 
 ```{r}
@@ -42,9 +67,43 @@ samples_simple_sc <- model_simple$sample(
   iter_sampling = 3000,
   refresh = 500
 )
+
+samples_simple_sc$save_object("models/simple_sc.rds")
 ```
 
 ```{r}
-samples_simple_sc$cmdstan_diagnose()
+samples_simple_sc <- readRDS("models/simple_sc.rds")
+
+samples_simple_sc$cmdstan_diagnose() #function checking the chains and stuff
+
+samples_simple_sc$summary() # summarize the model
+
+```
+
+```{r}
+samples_simple_sc$loo()
+```
+
+```{r}
+# Extract posterior samples and include sampling of the prior:
+simple_draws_df <- as_draws_df(samples_simple_sc$draws())
+```
+
+Model checking and plotting
+- chains 
+- priors
+```{r}
+
+```
+
+Weighted model
+```{r}
+
+```
+
+Model comparison 
+
+```{r}
+
 ```
 
