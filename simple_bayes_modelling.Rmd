@@ -5,7 +5,7 @@ date: "2024-04-12"
 output: html_document
 ---
 ```{r}
-pacman::p_load(cmdstanr, tidyverse, LaplacesDemon)
+pacman::p_load(cmdstanr, tidyverse, LaplacesDemon, brms)
 ```
 
 
@@ -13,34 +13,57 @@ This needs to be done!
 ```{r}
 #Create function to simulate data 
 
-sim_simple_f <- function()
+sim_simple_f <- function(bias, FirstRating, GroupRating) {
+  
+  #Check if this is actually what we are modelling??
+  outcome <- inv_logit_scaled(bias + logit_scaled(FirstRating) + logit_scaled(GroupRating))
+  
+  return(outcome)
+}
 
 #Simulate some data 
 
 bias <- 0
 trials <- seq(10)
-Source1 <- seq(1,8, 1)
-Source2 <- seq(1,8, 1)
+FirstRating <- seq(1,8, 1)
+GroupRating <- seq(1,8, 1)
 
-db <- expand.grid(bias = bias, trials = trials, Source1 = Source1, Source2 = Source2)
+sim_data_simB <- expand.grid(bias = bias, trials = trials, FirstRating = FirstRating, GroupRating = GroupRating)
 
-for (n in seq(nrow(db))) {
-  db$belief[n] <- SimpleBayes_f(db$bias[n], db$Source1[n], db$Source2[n])
-  db$choice[n] <- rbinom(1,1, db$belief[n])
-  db$continuous[n] <- db$belief[n]*9
-  db$discrete[n] <- round(db$belief[n]*9,0)
+for (n in seq(nrow(sim_data_simB))) {
+  sim_data_simB$belief[n] <- sim_simple_f(sim_data_simB$bias[n], sim_data_simB$Source1[n], sim_data_simB$Source2[n])
+  sim_data_simB$choice[n] <- rnorm(1,1, sim_data_simB$belief[n]) # which one should we do here, because its not rbinom when it is not binary data, have to choose from a normal distribution, cannot figure it out in my head right now
+  sim_data_simB$continuous[n] <- sim_data_simB$belief[n]*9 #I dont know what he is doing here
+  sim_data_simB$discrete[n] <- round(sim_data_simB$belief[n]*9,0) # Neither here
 }
 
 ```
 
-```{r}
+```{r compiling model}
 file <- file.path("simple_sc.stan")
 
 model_simple <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE),
                      stanc_options = list("O1"))
 ```
 
-```{r}
+```{r fitting model on simulated data}
+samples_simple_sc_sim <- model_simple$sample(
+  data = sim_data_simB, 
+  #fixed_param = TRUE,
+  seed = 123,
+  chains = 2,
+  parallel_chains = 2,
+  threads_per_chain = 2,
+  iter_warmup = 1500,
+  iter_sampling = 3000,
+  refresh = 500
+)
+
+samples_simple_sc_sim$save_object("models/simple_sc_sim.rds")
+```
+
+
+```{r cleaning data}
 #remove na's in data 
 
 df <- read_csv("data/data.csv")
@@ -55,7 +78,7 @@ data <- list(
 )
 ```
 
-```{r}
+```{r fitting model to real data}
 samples_simple_sc <- model_simple$sample(
   data = data,
   #fixed_param = TRUE,
