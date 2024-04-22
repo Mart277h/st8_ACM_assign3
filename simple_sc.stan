@@ -28,7 +28,7 @@ parameters {
 model {
   target += normal_lpdf(bias | 0, 1); //prior for bias, as this is the only thing we estimate in this model 
   target += normal_lpdf(st_d | 1, 0.1);
-  target += normal_lpdf(to_vector(l_SecondRating) | bias + to_vector(l_FirstRating) + to_vector(l_GroupRating), st_d); 
+  target += normal_lpdf(to_vector(l_SecondRating) | bias + to_vector(l_FirstRating)*0.5 + to_vector(l_GroupRating)*0.5, st_d); 
 }
 
 generated quantities{

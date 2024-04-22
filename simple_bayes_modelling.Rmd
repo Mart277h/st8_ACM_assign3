@@ -5,7 +5,7 @@ date: "2024-04-12"
 output: html_document
 ---
 ```{r}
-pacman::p_load(cmdstanr, tidyverse, LaplacesDemon, brms)
+pacman::p_load(cmdstanr, tidyverse, brms)
 ```
 
 
@@ -16,7 +16,7 @@ This needs to be done!
 sim_simple_f <- function(bias, FirstRating, GroupRating) {
   
   #Check if this is actually what we are modelling??
-  outcome <- inv_logit_scaled(bias + logit_scaled(FirstRating) + logit_scaled(GroupRating))
+  outcome <- inv_logit_scaled(bias + 0.5*logit_scaled(FirstRating/9) + 0.5*logit_scaled(GroupRating/9))
   
   return(outcome)
 }
@@ -31,8 +31,11 @@ GroupRating <- seq(1,8, 1)
 sim_data_simB <- expand.grid(bias = bias, trials = trials, FirstRating = FirstRating, GroupRating = GroupRating)
 
 for (n in seq(nrow(sim_data_simB))) {
-  sim_data_simB$belief[n] <- sim_simple_f(sim_data_simB$bias[n], sim_data_simB$Source1[n], sim_data_simB$Source2[n])
-  sim_data_simB$choice[n] <- rnorm(1,1, sim_data_simB$belief[n]) # which one should we do here, because its not rbinom when it is not binary data, have to choose from a normal distribution, cannot figure it out in my head right now
+  sim_data_simB$belief[n] <- sim_simple_f(sim_data_simB$bias[n], sim_data_simB$FirstRating[n], sim_data_simB$GroupRating[n])
+  sim_data_simB$choice[n] <- round(sim_data_simB$belief[n], 1) #need to make a choice, should we sample or just take the straight value? 
+}
+
+  # which one should we do here, because its not rbinom when it is not binary data, have to choose from a normal distribution, cannot figure it out in my head right now
   sim_data_simB$continuous[n] <- sim_data_simB$belief[n]*9 #I dont know what he is doing here
   sim_data_simB$discrete[n] <- round(sim_data_simB$belief[n]*9,0) # Neither here
 }
