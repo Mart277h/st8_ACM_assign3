@@ -1,0 +1,110 @@
+---
+title: "weighted_bayes_modelling"
+author: "Martine Lind Jensen"
+date: "2024-04-23"
+output: html_document
+---
+```{r}
+pacman::p_load(cmdstanr, tidyverse, brms)
+```
+
+```{r}
+#Create function to simulate data 
+
+sim_weighted_f <- function(bias, FirstRating, GroupRating, weight1, weight2) {
+  
+  weight1 <- (weight1 - 0.5)*2
+  weight2 <- (weight2 - 0.5)*2
+  
+  #Check if this is actually what we are modelling??
+  outcome <- inv_logit_scaled(bias + weight1*logit_scaled(FirstRating/9) + weight2*logit_scaled(GroupRating/9))
+  
+  return(outcome)
+}
+
+#Simulate some data 
+
+bias <- 0
+trials <- seq(1)
+FirstRating <- seq(1,8, 1)
+GroupRating <- seq(1,8, 1)
+weight1 <- seq(0.5, 1, 0.1)
+weight2 <- seq(0.5, 1, 0.1)
+
+sim_data_weightB <- expand.grid(bias = bias, trials = trials, FirstRating = FirstRating, GroupRating = GroupRating, weight1 = weight1, weight2 = weight2)
+
+for (n in seq(nrow(sim_data_weightB))) {
+  sim_data_weightB$belief[n] <- sim_weighted_f(sim_data_weightB$bias[n], sim_data_weightB$FirstRating[n], sim_data_weightB$GroupRating[n], sim_data_weightB$weight1[n], sim_data_weightB$weight2[n])
+  sim_data_weightB$choice[n] <- round(sim_data_weightB$belief[n]*9, 0) 
+  
+  if (sim_data_weightB$choice[n] == 0) {sim_data_weightB$choice[n] <-  1}
+  
+  if (sim_data_weightB$choice[n] == 9) {sim_data_weightB$choice[n] <- 8}
+}
+
+```
+
+Visualize simulated data
+```{r}
+
+```
+
+Compare to the real data, does it make sense? 
+
+```{r}
+
+```
+
+
+
+
+```{r compiling model}
+file <- file.path("simple_sc.stan")
+
+model_weighted <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE),
+                     stanc_options = list("O1"))
+```
+
+```{r fitting model on simulated data}
+samples_simple_sc_sim <- model_simple$sample(
+  data = sim_data_simB, 
+  #fixed_param = TRUE,
+  seed = 123,
+  chains = 2,
+  parallel_chains = 2,
+  threads_per_chain = 2,
+  iter_warmup = 1500,
+  iter_sampling = 3000,
+  refresh = 500
+)
+
+samples_simple_sc_sim$save_object("models/simple_sc_sim.rds")
+```
+
+
+```{r cleaning data}
+#remove na's in data 
+
+df <- read_csv("data/data.csv")
+
+df <- na.omit(df)
+
+data <- list(
+  N = 2598, 
+  SecondRating = df$SecondRating, 
+  FirstRating = df$FirstRating, 
+  GroupRating = df$GroupRating
+)
+```
+
+```{r fitting model to real data}
+samples_simple_sc <- model_simple$sample(
+  data = data,
+  #fixed_param = TRUE,
+  seed = 123,
+  chains = 2,
+  parallel_chains = 2,
+  threads_per_chain = 2,
+  iter_warmup = 1500,
+  iter_sampling = 3000,
+  refresh = 500

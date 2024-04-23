@@ -40,7 +40,7 @@ generated quantities{
   sd_prior = normal_rng(1, 0.1);
   
   for (n in 1:N){  
-    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n] + l_GroupRating[n], sd_prior);
+    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*0.5 + l_GroupRating[n]*0.5, sd_prior);
   }
   
 }
