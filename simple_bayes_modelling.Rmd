@@ -9,7 +9,6 @@ pacman::p_load(cmdstanr, tidyverse, brms)
 ```
 
 
-This needs to be done! 
 ```{r}
 #Create function to simulate data 
 
@@ -32,8 +31,13 @@ sim_data_simB <- expand.grid(bias = bias, trials = trials, FirstRating = FirstRa
 
 for (n in seq(nrow(sim_data_simB))) {
   sim_data_simB$belief[n] <- sim_simple_f(sim_data_simB$bias[n], sim_data_simB$FirstRating[n], sim_data_simB$GroupRating[n])
-  sim_data_simB$choice[n] <- round(sim_data_simB$belief[n], 1) #need to make a choice, should we sample or just take the straight value? 
+  sim_data_simB$choice[n] <- round(sim_data_simB$belief[n]*9, 0) #need to make a choice, should we sample or just take the straight value? And then we need to figure out how we are gonna make it 1-8 again
 }
+```
+
+
+```{r}
+##Trash
 
   # which one should we do here, because its not rbinom when it is not binary data, have to choose from a normal distribution, cannot figure it out in my head right now
   sim_data_simB$continuous[n] <- sim_data_simB$belief[n]*9 #I dont know what he is doing here
@@ -41,6 +45,13 @@ for (n in seq(nrow(sim_data_simB))) {
 }
 
 ```
+
+Visualize simulated data
+```{r}
+
+```
+
+Compare to the real data, does it make sense? 
 
 ```{r compiling model}
 file <- file.path("simple_sc.stan")
