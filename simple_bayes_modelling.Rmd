@@ -132,15 +132,3 @@ Model checking and plotting
 ```{r}
 
 ```
-
-Weighted model
-```{r}
-
-```
-
-Model comparison 
-
-```{r}
-
-```
-
