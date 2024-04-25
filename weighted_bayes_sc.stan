@@ -37,7 +37,7 @@ transformed parameters {
 
 model {
   target += normal_lpdf(bias | 0, 1); //prior for bias, as this is the only thing we estimate in this model 
-  target += normal_lpdf(st_d | 1, 0.1);
+  target += normal_lpdf(st_d | 0, 1) - normal_lccdf(0 | 0, 1);
   target += beta_lpdf(t_weight1 | 1, 1); //prior for transformed parameter weights 1 and 2
   target += beta_lpdf(t_weight2 | 1, 1);
   
@@ -47,19 +47,19 @@ model {
 
 generated quantities{
   real bias_prior;
-  real sd_prior;
+  //real sd_prior;
   real w1_prior;
   real w2_prior;
   array[N] real log_lik;
   
   bias_prior = normal_rng(0, 1);
-  sd_prior = normal_rng(1, 0.1);
+  //sd_prior = normal_rng(1, 0.1);
   
   w1_prior = 0.5 + inv_logit(normal_rng(0, 1))/2;
   w2_prior = 0.5 + inv_logit(normal_rng(0, 1))/2;
   
   for (n in 1:N){  
-    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*t_weight1 + l_GroupRating[n]*t_weight2, sd_prior);
+    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*t_weight1 + l_GroupRating[n]*t_weight2, st_d);
   }
   
     

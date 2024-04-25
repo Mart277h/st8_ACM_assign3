@@ -27,20 +27,19 @@ parameters {
 
 model {
   target += normal_lpdf(bias | 0, 1); //prior for bias, as this is the only thing we estimate in this model 
-  target += normal_lpdf(st_d | 1, 0.1);
+  target += normal_lpdf(st_d | 0, 1) - normal_lccdf(0 | 0, 1); //prior for SD
+  
   target += normal_lpdf(to_vector(l_SecondRating) | bias + to_vector(l_FirstRating)*0.5 + to_vector(l_GroupRating)*0.5, st_d); 
 }
 
 generated quantities{
   real bias_prior;
-  real sd_prior;
   array[N] real log_lik;
   
   bias_prior = normal_rng(0, 1);
-  sd_prior = normal_rng(1, 0.1);
   
   for (n in 1:N){  
-    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*0.5 + l_GroupRating[n]*0.5, sd_prior);
+    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*0.5 + l_GroupRating[n]*0.5, st_d);
   }
   
 }

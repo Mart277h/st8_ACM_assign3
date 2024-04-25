@@ -35,17 +35,6 @@ for (n in seq(nrow(sim_data_simB))) {
 }
 ```
 
-
-```{r}
-##Trash
-
-  # which one should we do here, because its not rbinom when it is not binary data, have to choose from a normal distribution, cannot figure it out in my head right now
-  sim_data_simB$continuous[n] <- sim_data_simB$belief[n]*9 #I dont know what he is doing here
-  sim_data_simB$discrete[n] <- round(sim_data_simB$belief[n]*9,0) # Neither here
-}
-
-```
-
 Visualize simulated data
 ```{r}
 
@@ -61,8 +50,15 @@ model_simple <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE),
 ```
 
 ```{r fitting model on simulated data}
+d_sim_simple <- list(
+  N = nrow(sim_data_simB), 
+  SecondRating = sim_data_simB$choice, 
+  FirstRating = sim_data_simB$FirstRating, 
+  GroupRating = sim_data_simB$GroupRating
+)
+
 samples_simple_sc_sim <- model_simple$sample(
-  data = sim_data_simB, 
+  data = d_sim_simple, 
   #fixed_param = TRUE,
   seed = 123,
   chains = 2,
@@ -76,8 +72,59 @@ samples_simple_sc_sim <- model_simple$sample(
 samples_simple_sc_sim$save_object("models/simple_sc_sim.rds")
 ```
 
+```{r}
+samples_simple_sc_sim <- readRDS("models/simple_sc_sim.rds")
 
-```{r cleaning data}
+samples_simple_sc_sim$cmdstan_diagnose() 
+
+samples_simple_sc_sim$summary()
+
+samples_simple_sc_sim$loo()
+  #Very bad loo cross validation
+```
+
+```{r}
+draws_sim_sim <- as_draws_df(samples_simple_sc_sim$draws())
+```
+
+Chains seem fine
+```{r}
+ggplot(draws_sim_sim, aes(.iteration, bias, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+
+ggplot(draws_sim_sim, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+
+ggplot(draws_sim_sim, aes(.iteration, st_d, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+
+ggplot(draws_sim_sim, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+```
+
+```{r}
+sim_sim_bias <- ggplot(draws_sim_sim) +
+  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  theme_bw() + 
+  xlim(-1,1)
+sim_sim_bias
+
+sim_sim_sd <- ggplot(draws_sim_sim) +
+  geom_density(aes(st_d), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(sd_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  theme_bw() + 
+  xlim(-1,1)
+
+```
+
+```{r fitting model to real data}
 #remove na's in data 
 
 df <- read_csv("data/data.csv")
@@ -85,14 +132,12 @@ df <- read_csv("data/data.csv")
 df <- na.omit(df)
 
 data <- list(
-  N = 2598, 
+  N = nrow(df), 
   SecondRating = df$SecondRating, 
   FirstRating = df$FirstRating, 
   GroupRating = df$GroupRating
 )
-```
 
-```{r fitting model to real data}
 samples_simple_sc <- model_simple$sample(
   data = data,
   #fixed_param = TRUE,
@@ -115,20 +160,48 @@ samples_simple_sc$cmdstan_diagnose() #function checking the chains and stuff
 
 samples_simple_sc$summary() # summarize the model
 
-```
-
-```{r}
 samples_simple_sc$loo()
 ```
 
 ```{r}
 # Extract posterior samples and include sampling of the prior:
-simple_draws_df <- as_draws_df(samples_simple_sc$draws())
+draws_simple <- as_draws_df(samples_simple_sc$draws())
 ```
 
 Model checking and plotting
-- chains 
-- priors
 ```{r}
+ggplot(draws_sim_sim, aes(.iteration, bias, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+
+ggplot(draws_sim_sim, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+
+ggplot(draws_sim_sim, aes(.iteration, st_d, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+
+ggplot(draws_sim_sim, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()
+```
+
+```{r}
+simple_bias <- ggplot(draws_sim_sim) +
+  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  theme_bw() + 
+  xlim(-1,1)
+
+simple_bias
+
+sim_sim_sd <- ggplot(draws_sim_sim) +
+  geom_density(aes(st_d), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(sd_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  theme_bw() + 
+  xlim(-1,1)
 
 ```
