@@ -18,8 +18,6 @@ transformed data {
   }
 }
 
-// The parameters accepted by the model. Our model
-// accepts two parameters 'mu' and 'sigma'.
 parameters {
   real bias; 
   real st_d; 
@@ -37,7 +35,7 @@ transformed parameters {
 
 model {
   target += normal_lpdf(bias | 0, 1); //prior for bias, as this is the only thing we estimate in this model 
-  target += normal_lpdf(st_d | 0, 1) - normal_lccdf(0 | 0, 1);
+  target += normal_lpdf(st_d | 0, .3) - normal_lccdf(0 | 0, .3);
   target += beta_lpdf(t_weight1 | 1, 1); //prior for transformed parameter weights 1 and 2
   target += beta_lpdf(t_weight2 | 1, 1);
   

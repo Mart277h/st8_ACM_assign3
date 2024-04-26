@@ -6,6 +6,8 @@ output: html_document
 ---
 ```{r}
 pacman::p_load(cmdstanr, tidyverse, brms)
+
+set.seed(1234)
 ```
 
 
