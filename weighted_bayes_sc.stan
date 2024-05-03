@@ -1,4 +1,12 @@
 // 
+functions{
+  real normal_lb_rng(real mu, real sigma, real lb) { // normal distribution with a lower bound
+    real p = normal_cdf(lb | mu, sigma);  // cdf for bounds
+    real u = uniform_rng(p, 1);
+    return (sigma * inv_Phi(u)) + mu;  // inverse cdf for value
+  }
+}
+
 data {
   int<lower=0> N;
   array[N] real SecondRating; //What we are predicting, our y 
@@ -39,25 +47,27 @@ model {
   target += beta_lpdf(t_weight1 | 1, 1); //prior for transformed parameter weights 1 and 2
   target += beta_lpdf(t_weight2 | 1, 1);
   
-  for (n in 1:N)
+  for (n in 1:N) {
     target += normal_lpdf(l_SecondRating[n] | bias + l_FirstRating[n]*t_weight1 + l_GroupRating[n]*t_weight2, st_d); 
+  }
+  
 }
 
 generated quantities{
   real bias_prior;
-  //real sd_prior;
+  real <lower = 0> sd_prior;
   real w1_prior;
   real w2_prior;
   array[N] real log_lik;
   
   bias_prior = normal_rng(0, 1);
-  //sd_prior = normal_rng(1, 0.1);
+  sd_prior = normal_lb_rng(0,0.3,0);
   
   w1_prior = 0.5 + inv_logit(normal_rng(0, 1))/2;
   w2_prior = 0.5 + inv_logit(normal_rng(0, 1))/2;
   
-  for (n in 1:N){  
-    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*t_weight1 + l_GroupRating[n]*t_weight2, st_d);
+  for (n in 1:N) {
+    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias + l_FirstRating[n]*t_weight1 + l_GroupRating[n]*t_weight2, st_d);
   }
   
     

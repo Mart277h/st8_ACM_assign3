@@ -46,19 +46,6 @@ for (n in seq(nrow(sim_data_weightB))) {
 
 ```
 
-Visualize simulated data
-```{r}
-
-```
-
-Compare to the real data, does it make sense? 
-
-```{r}
-
-```
-
-
-
 
 ```{r compiling model}
 file <- file.path("weighted_bayes_sc.stan")
@@ -68,11 +55,13 @@ model_weighted <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE),
 ```
 
 ```{r fitting model on simulated data}
+sim_data_weightB1 <-  sim_data_weightB %>% subset(weight1 == 0.7 & weight2 == 0.9) 
+
 df_sim_weight <- list(
-  N = nrow(sim_data_weightB), 
-  SecondRating = sim_data_weightB$choice, 
-  FirstRating = sim_data_weightB$FirstRating, 
-  GroupRating = sim_data_weightB$GroupRating
+  N = nrow(sim_data_weightB1), 
+  SecondRating = sim_data_weightB1$choice, 
+  FirstRating = sim_data_weightB1$FirstRating, 
+  GroupRating = sim_data_weightB1$GroupRating
 )
 
 samples_weighted_sc_sim <- model_weighted$sample(
@@ -83,7 +72,9 @@ samples_weighted_sc_sim <- model_weighted$sample(
   threads_per_chain = 2,
   iter_warmup = 1500,
   iter_sampling = 3000,
-  refresh = 500
+  refresh = 500, 
+  max_treedepth = 20,
+  adapt_delta = 0.99,
 )
 
 samples_weighted_sc_sim$save_object("models/weighted_sc_sim.rds")
@@ -112,7 +103,7 @@ ggplot(draws_sim_weighted, aes(.iteration, bias_prior, group = .chain, color = .
   geom_line(alpha = 0.5) +
   theme_classic()
 
-ggplot(draws_df, aes(.iteration, st_d, group = .chain, color = .chain)) +
+ggplot(draws_sim_weighted, aes(.iteration, st_d, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
 
@@ -134,19 +125,19 @@ ggplot(draws_sim_weighted, aes(.iteration, weight2, group = .chain, color = .cha
 sim_weight_bias <- ggplot(draws_sim_weighted) +
   geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
-  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  geom_vline(xintercept = sim_data_weightB1$bias[1]) +
   theme_bw()
 sim_weight_bias
 sim_weight_w1 <- ggplot(draws_sim_weighted) +
   geom_density(aes(weight1), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(w1_prior), alpha = 0.6, fill = "pink") +
-  #geom_vline(xintercept = sim_data_weightB$weight1[1]) +
+  geom_vline(xintercept = sim_data_weightB1$weight1[1]) +
   theme_bw()
 sim_weight_w1
 sim_weight_w2 <- ggplot(draws_sim_weighted) +
   geom_density(aes(weight2), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(w2_prior), alpha = 0.6, fill = "pink") +
-  #geom_vline(xintercept = db1$w2[1]) +
+  geom_vline(xintercept = sim_data_weightB1$weight2[1]) +
   theme_bw()
 sim_weight_w2
 ```

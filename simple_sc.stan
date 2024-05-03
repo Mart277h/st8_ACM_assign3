@@ -1,4 +1,5 @@
 // 
+
 data {
   int<lower=0> N;
   array[N] real SecondRating; //What we are predicting, our y 
@@ -27,7 +28,7 @@ parameters {
 
 model {
   target += normal_lpdf(bias | 0, 1); //prior for bias, as this is the only thing we estimate in this model 
-  target += normal_lpdf(st_d | 0, 1) - normal_lccdf(0 | 0, 1); //prior for SD
+  target += normal_lpdf(st_d | 0, .3) - normal_lccdf(0 | 0, .3); //prior for SD
   
   target += normal_lpdf(to_vector(l_SecondRating) | bias + to_vector(l_FirstRating)*0.5 + to_vector(l_GroupRating)*0.5, st_d); 
 }
@@ -39,7 +40,7 @@ generated quantities{
   bias_prior = normal_rng(0, 1);
   
   for (n in 1:N){  
-    log_lik[n] = normal_lpdf(l_SecondRating[n] | bias_prior + l_FirstRating[n]*0.5 + l_GroupRating[n]*0.5, st_d);
+    log_lik[n] = normal_lpdf(to_vector(l_SecondRating)[n] | bias + to_vector(l_FirstRating)[n]*0.5 + to_vector(l_GroupRating)[n]*0.5, st_d);
   }
   
 }

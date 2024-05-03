@@ -37,13 +37,6 @@ for (n in seq(nrow(sim_data_simB))) {
 }
 ```
 
-Visualize simulated data
-```{r}
-
-```
-
-Compare to the real data, does it make sense? 
-
 ```{r compiling model}
 file <- file.path("simple_sc.stan")
 
@@ -82,7 +75,6 @@ samples_simple_sc_sim$cmdstan_diagnose()
 samples_simple_sc_sim$summary()
 
 samples_simple_sc_sim$loo()
-  #Very bad loo cross validation
 ```
 
 ```{r}
@@ -103,16 +95,13 @@ ggplot(draws_sim_sim, aes(.iteration, st_d, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
 
-ggplot(draws_sim_sim, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
-  geom_line(alpha = 0.5) +
-  theme_classic()
 ```
 
 ```{r}
 sim_sim_bias <- ggplot(draws_sim_sim) +
   geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
-  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  geom_vline(xintercept = sim_data_weightB$bias[1]) +
   theme_bw() + 
   xlim(-1,1)
 sim_sim_bias
@@ -198,12 +187,5 @@ simple_bias <- ggplot(draws_sim_sim) +
   xlim(-1,1)
 
 simple_bias
-
-sim_sim_sd <- ggplot(draws_sim_sim) +
-  geom_density(aes(st_d), alpha = 0.6, fill = "darkolivegreen4") +
-  geom_density(aes(sd_prior), alpha = 0.6, fill = "pink") +
-  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
-  theme_bw() + 
-  xlim(-1,1)
 
 ```
