@@ -149,16 +149,11 @@ sim_weight_w2
 df <- read_csv("data/data.csv")
 
 df <- na.omit(df)
-
-data <- list(
-  N = nrow(df), 
-  SecondRating = df$SecondRating, 
-  FirstRating = df$FirstRating, 
-  GroupRating = df$GroupRating
-)
 ```
 
-```{r fitting model to real data}
+
+
+```{r fitting model to real data }
 samples_weighted_sc <- model_weighted$sample(
   data = data,
   #fixed_param = TRUE,
@@ -188,7 +183,30 @@ samples_weighted_sc$loo()
 draws_weighted <- as_draws_df(samples_weighted_sc$draws())
 ```
 
-```{r}
+```{r means}
+weighted_bias <- ggplot(draws_weighted) +
+  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  theme_bw() 
+
+weighted_bias
+weighted_w1 <- ggplot(draws_weighted) +
+  geom_density(aes(weight1), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(w1_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$weight1[1]) +
+  theme_bw()
+
+
+weighted_w1
+weighted_w2 <- ggplot(draws_weighted) +
+  geom_density(aes(weight2), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(w2_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = db1$w2[1]) +
+  theme_bw()
+```
+
+```{r chain means}
 ggplot(draws_weighted, aes(.iteration, bias, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
@@ -196,7 +214,6 @@ ggplot(draws_weighted, aes(.iteration, bias, group = .chain, color = .chain)) +
 ggplot(draws_weighted, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
-
 ggplot(draws_weighted, aes(.iteration, st_d, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
@@ -204,6 +221,7 @@ ggplot(draws_weighted, aes(.iteration, st_d, group = .chain, color = .chain)) +
 ggplot(draws_weighted, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
+
 
 ggplot(draws_weighted, aes(.iteration, weight1, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
@@ -215,25 +233,101 @@ ggplot(draws_weighted, aes(.iteration, weight2, group = .chain, color = .chain))
 
 ```
 
-```{r}
-weighted_bias <- ggplot(draws_weighted) +
+```{r looping through each participant}
+#creating a list for a for loop to go through, modelling by each participant
+participant_list <- unique(df$Participant)
+
+for (i in participant_list){ 
+  
+  data_subject <- filter(df, Participant == i)
+  
+  data <- list(
+    N = nrow(data_subject), 
+    SecondRating = data_subject$SecondRating, 
+    FirstRating = data_subject$FirstRating, 
+    GroupRating = data_subject$GroupRating
+  )
+  
+  samples_weighted <- model_weighted$sample(
+    data = data,
+    #fixed_param = TRUE,
+    seed = 123,
+    chains = 2,
+    parallel_chains = 2,
+    threads_per_chain = 2,
+    iter_warmup = 1500,
+    iter_sampling = 3000,
+    refresh = 500
+  )
+  
+  #adding the draws to the dataframe
+  temp_df <- as_draws_df(samples_weighted$draws())
+  
+  temp_df <- temp_df %>% 
+    mutate(subject = i)
+  
+  if (exists("draws_weighted")) {draws_weighted <- rbind(draws_weighted, temp_df)} #remember to clean if reusing
+  else{draws_weighted <- temp_df}
+  
+  
+  }
+```
+
+```{r chains by participants}
+ggplot(draws_weighted, aes(.iteration, bias, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic() + 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic() + 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted, aes(.iteration, st_d, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()+ 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()+ 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted, aes(.iteration, weight1, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()+ 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted, aes(.iteration, weight2, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()+ 
+  facet_wrap(.~subject)
+
+```
+
+```{r by individual participants}
+ggplot(draws_weighted) +
   geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$bias[1]) +
-  theme_bw()
-weighted_bias
-weighted_w1 <- ggplot(draws_weighted) +
+  theme_bw() + 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted) +
   geom_density(aes(weight1), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(w1_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$weight1[1]) +
-  theme_bw()
-weighted_w1
-weighted_w2 <- ggplot(draws_weighted) +
+  theme_bw()+ 
+  facet_wrap(.~subject)
+
+ggplot(draws_weighted) +
   geom_density(aes(weight2), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(w2_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = db1$w2[1]) +
-  theme_bw()
-weighted_w2
+  theme_bw()+ 
+  facet_wrap(.~subject) + 
+  ylim(0,50)
 ```
 
 
