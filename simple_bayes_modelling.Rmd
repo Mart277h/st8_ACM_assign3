@@ -24,7 +24,7 @@ sim_simple_f <- function(bias, FirstRating, GroupRating) {
 
 #Simulate some data 
 
-bias <- 0
+bias <- seq(0,1,0.1)
 trials <- seq(10)
 FirstRating <- seq(1,8, 1)
 GroupRating <- seq(1,8, 1)
@@ -45,11 +45,15 @@ model_simple <- cmdstan_model(file, cpp_options = list(stan_threads = TRUE),
 ```
 
 ```{r fitting model on simulated data}
+
+d_sim_simple_bias0.7 <- sim_data_simB %>% filter(bias == "0.7")
+
+
 d_sim_simple <- list(
-  N = nrow(sim_data_simB), 
-  SecondRating = sim_data_simB$choice, 
-  FirstRating = sim_data_simB$FirstRating, 
-  GroupRating = sim_data_simB$GroupRating
+  N = nrow(d_sim_simple_bias0.7), 
+  SecondRating = d_sim_simple_bias0.7$choice, 
+  FirstRating = d_sim_simple_bias0.7$FirstRating, 
+  GroupRating = d_sim_simple_bias0.7$GroupRating
 )
 
 samples_simple_sc_sim <- model_simple$sample(
@@ -101,9 +105,8 @@ ggplot(draws_sim_sim, aes(.iteration, st_d, group = .chain, color = .chain)) +
 sim_sim_bias <- ggplot(draws_sim_sim) +
   geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
-  geom_vline(xintercept = sim_data_weightB$bias[1]) +
-  theme_bw() + 
-  xlim(-1,1)
+  geom_vline(xintercept = d_sim_simple_bias0.7$bias[1]) +
+  theme_bw() 
 sim_sim_bias
 
 sim_sim_sd <- ggplot(draws_sim_sim) +
@@ -122,11 +125,14 @@ df <- read_csv("data/data.csv")
 
 df <- na.omit(df)
 
+#subsetting to one participant
+subset1 <- df %>% subset(Participant ==86)
+
 data <- list(
-  N = nrow(df), 
-  SecondRating = df$SecondRating, 
-  FirstRating = df$FirstRating, 
-  GroupRating = df$GroupRating
+  N = nrow(subset1), 
+  SecondRating = subset1$SecondRating, 
+  FirstRating = subset1$FirstRating, 
+  GroupRating = subset1$GroupRating
 )
 
 samples_simple_sc <- model_simple$sample(
@@ -188,4 +194,83 @@ simple_bias <- ggplot(draws_sim_sim) +
 
 simple_bias
 
+```
+
+```{r looping through each participant}
+#creating a list for a for loop to go through, modelling by each participant
+participant_list <- unique(df$Participant)
+
+draws_simple <- c()
+
+loos_simple <- c()
+
+for (i in participant_list){ 
+  
+  data_subject <- filter(df, Participant == i)
+  
+  data <- list(
+    N = nrow(data_subject), 
+    SecondRating = data_subject$SecondRating, 
+    FirstRating = data_subject$FirstRating, 
+    GroupRating = data_subject$GroupRating
+  )
+  
+  samples_simple <- model_simple$sample(
+    data = data,
+    #fixed_param = TRUE,
+    seed = 123,
+    chains = 2,
+    parallel_chains = 2,
+    threads_per_chain = 2,
+    iter_warmup = 1500,
+    iter_sampling = 3000,
+    refresh = 500
+  )
+  #loo <- samples_simple$loo()
+  
+  #loos_simple[i] <- loo
+  
+  #adding the draws to the dataframe
+  temp_df <- as_draws_df(samples_simple$draws())
+  
+  temp_df <- temp_df %>% 
+    mutate(subject = i)
+  
+  if (exists("draws_simple")) {draws_simple <- rbind(draws_simple, temp_df)} #remember to clean if reusing
+  else{draws_simple <- temp_df}
+  
+  
+  }
+```
+
+```{r chains by participants}
+ggplot(draws_simple, aes(.iteration, bias, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic() + 
+  facet_wrap(.~subject)
+
+ggplot(draws_simple, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic() + 
+  facet_wrap(.~subject)
+
+ggplot(draws_simple, aes(.iteration, st_d, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()+ 
+  facet_wrap(.~subject)
+
+ggplot(draws_simple, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
+  geom_line(alpha = 0.5) +
+  theme_classic()+ 
+  facet_wrap(.~subject)
+
+```
+
+```{r by individual participants}
+ggplot(draws_simple) +
+  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
+  #geom_vline(xintercept = sim_data_weightB$bias[1]) +
+  theme_bw() + 
+  facet_wrap(.~subject)
 ```

@@ -107,10 +107,6 @@ ggplot(draws_sim_weighted, aes(.iteration, st_d, group = .chain, color = .chain)
   geom_line(alpha = 0.5) +
   theme_classic()
 
-ggplot(draws_sim_weighted, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
-  geom_line(alpha = 0.5) +
-  theme_classic()
-
 ggplot(draws_sim_weighted, aes(.iteration, weight1, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
@@ -153,7 +149,17 @@ df <- na.omit(df)
 
 
 
-```{r fitting model to real data }
+```{r fitting model to real data 1 participant }
+subset1 <- df %>% subset(Participant == 86)
+
+
+data <- list(
+  N = nrow(subset1), 
+  SecondRating = subset1$SecondRating, 
+  FirstRating = subset1$FirstRating, 
+  GroupRating = subset1$GroupRating
+)
+
 samples_weighted_sc <- model_weighted$sample(
   data = data,
   #fixed_param = TRUE,
@@ -206,7 +212,7 @@ weighted_w2 <- ggplot(draws_weighted) +
   theme_bw()
 ```
 
-```{r chain means}
+```{r chain }
 ggplot(draws_weighted, aes(.iteration, bias, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
