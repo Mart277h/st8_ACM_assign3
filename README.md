@@ -4,7 +4,7 @@
 This repository contains all code and data related to the assignment 3 of the ACM port folio exam. 
 
 ### Usage
-For the assignment, exploration and visualization of empirical data is found in data_exploration.Rmd. Simulating, fitting and modelling is found for the simple bayes model in simple_bayes_modelling.Rmd, and for weighted bayes model in weighted_bayes_modelling. The Stan code is found in simple_sc.stan and weighted_bayes_sc.stan.  
+For the assignment, exploration and visualization of empirical data is found in data_exploration.Rmd. Simulating, fitting and modelling is found for the simple bayes model in simple_bayes_modelling.Rmd, and for weighted bayes model in weighted_bayes_modelling.Rmd. Model comparison between the two models are found in weighted_bayes_modelling.Rmd as well. The Stan code is found in simple_sc.stan and weighted_bayes_sc.stan.  
 
 ## Authors
 - Alina Kereszt (202005328)
