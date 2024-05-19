@@ -186,26 +186,23 @@ samples_weighted_sc$loo()
 ```
 
 ```{r}
-draws_weighted <- as_draws_df(samples_weighted_sc$draws())
+draws_weighted_p86 <- as_draws_df(samples_weighted_sc$draws())
 ```
 
 ```{r means}
-weighted_bias <- ggplot(draws_weighted) +
-  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+ggplot(draws_weighted_p86) +
+  geom_density(aes(inv_bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$bias[1]) +
   theme_bw() 
 
-weighted_bias
-weighted_w1 <- ggplot(draws_weighted) +
+ggplot(draws_weighted_p86) +
   geom_density(aes(weight1), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(w1_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$weight1[1]) +
   theme_bw()
 
-
-weighted_w1
-weighted_w2 <- ggplot(draws_weighted) +
+ggplot(draws_weighted_p86) +
   geom_density(aes(weight2), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(w2_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = db1$w2[1]) +
@@ -220,6 +217,7 @@ ggplot(draws_weighted, aes(.iteration, bias, group = .chain, color = .chain)) +
 ggplot(draws_weighted, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
+
 ggplot(draws_weighted, aes(.iteration, st_d, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
@@ -314,7 +312,7 @@ ggplot(draws_weighted, aes(.iteration, weight2, group = .chain, color = .chain))
 
 ```{r by individual participants}
 ggplot(draws_weighted) +
-  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(inv_bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$bias[1]) +
   theme_bw() + 
@@ -336,6 +334,84 @@ ggplot(draws_weighted) +
   ylim(0,50)
 ```
 
+```{r looping through each participant for both models}
+#creating a list for a for loop to go through, modelling by each participant
+participant_list <- unique(df$Participant)
+
+draws_simple <- tibble()
+
+draws_weighted <- tibble()
+
+weights_df <- tibble()
+
+for (i in participant_list){ 
+  
+  data_subject <- filter(df, Participant == i)
+  
+  data <- list(
+    N = nrow(data_subject), 
+    SecondRating = data_subject$SecondRating, 
+    FirstRating = data_subject$FirstRating, 
+    GroupRating = data_subject$GroupRating
+  )
+  
+  samples_weighted <- model_weighted$sample(
+    data = data,
+    #fixed_param = TRUE,
+    seed = 123,
+    chains = 2,
+    parallel_chains = 2,
+    threads_per_chain = 2,
+    iter_warmup = 1500,
+    iter_sampling = 3000,
+    refresh = 500
+  )
+  
+  #adding the draws to the dataframe
+  temp_df_w <- as_draws_df(samples_weighted$draws())
+  
+  temp_df_w <- temp_df_w %>% 
+    mutate(subject = i)
+  
+  if (exists("draws_weighted")) {draws_weighted <- rbind(draws_weighted, temp_df_w)} #remember to clean if reusing
+  else{draws_weighted <- temp_df_w}
+  
+  samples_simple <- model_simple$sample(
+    data = data,
+    #fixed_param = TRUE,
+    seed = 123,
+    chains = 2,
+    parallel_chains = 2,
+    threads_per_chain = 2,
+    iter_warmup = 1500,
+    iter_sampling = 3000,
+    refresh = 500
+  )
+  
+  #adding the draws to the dataframe
+  temp_df_s <- as_draws_df(samples_simple$draws())
+  
+  temp_df_s <- temp_df_s %>% 
+    mutate(subject = i)
+  
+  if (exists("draws_simple")) {draws_simple <- rbind(draws_simple, temp_df_s)} #remember to clean if reusing
+  else{draws_simple <- temp_df_s}
+  
+  
+  #getting model weights for each of the models to compare 
+  loo_simple <- samples_simple$loo(save_psis = TRUE)
+  
+  loo_weighted <- samples_weighted$loo(save_psis = TRUE)
+  
+    # model weights
+  temp_weights <- loo_model_weights(list(loo_simple, loo_weighted))
+  
+  temp_weights_df <- tibble(subject = i, SimpleBayes = temp_weights[1], WeightedBayes = temp_weights[2])
+  
+  weights_df <- rbind(weights_df, temp_weights_df)
+  
+}
+```
 
 ```{r}
 #Model comparison
@@ -343,5 +419,15 @@ loo_simple <- samples_simple_sc$loo()
 loo_weighted <- samples_weighted_sc$loo()
 comparison <- loo_compare(loo_simple, loo_weighted)
 
+comparison
+```
+
+```{r}
+weights_df <- weights_df %>% mutate(
+  best_model = factor(ifelse(SimpleBayes > WeightedBayes,"Simple","Weighted"))
+)
+
+# count
+table(weights_df$best_model)
 ```
 

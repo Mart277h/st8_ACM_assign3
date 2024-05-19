@@ -35,9 +35,11 @@ model {
 
 generated quantities{
   real bias_prior;
+  real inv_bias;
   array[N] real log_lik;
   
-  bias_prior = normal_rng(0, 1);
+  bias_prior = inv_logit(normal_rng(0, 1));
+  inv_bias = inv_logit(bias);
   
   for (n in 1:N){  
     log_lik[n] = normal_lpdf(to_vector(l_SecondRating)[n] | bias + to_vector(l_FirstRating)[n]*0.5 + to_vector(l_GroupRating)[n]*0.5, st_d);

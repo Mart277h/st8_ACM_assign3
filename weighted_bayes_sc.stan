@@ -55,13 +55,13 @@ model {
 
 generated quantities{
   real bias_prior;
-  real <lower = 0> sd_prior;
+  real inv_bias;
   real w1_prior;
   real w2_prior;
   array[N] real log_lik;
   
-  bias_prior = normal_rng(0, 1);
-  sd_prior = normal_lb_rng(0,0.3,0);
+  bias_prior = inv_logit(normal_rng(0, 1));
+  inv_bias = inv_logit(bias);
   
   w1_prior = 0.5 + inv_logit(normal_rng(0, 1))/2;
   w2_prior = 0.5 + inv_logit(normal_rng(0, 1))/2;

@@ -162,37 +162,34 @@ samples_simple_sc$loo()
 
 ```{r}
 # Extract posterior samples and include sampling of the prior:
-draws_simple <- as_draws_df(samples_simple_sc$draws())
+draws_simple_s <- as_draws_df(samples_simple_sc$draws())
 ```
 
 Model checking and plotting
 ```{r}
-ggplot(draws_sim_sim, aes(.iteration, bias, group = .chain, color = .chain)) +
+ggplot(draws_simple_s, aes(.iteration, bias, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
 
-ggplot(draws_sim_sim, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
+ggplot(draws_simple_s, aes(.iteration, bias_prior, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
 
-ggplot(draws_sim_sim, aes(.iteration, st_d, group = .chain, color = .chain)) +
+ggplot(draws_simple_s, aes(.iteration, st_d, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
 
-ggplot(draws_sim_sim, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
+ggplot(draws_simple_s, aes(.iteration, sd_prior, group = .chain, color = .chain)) +
   geom_line(alpha = 0.5) +
   theme_classic()
 ```
 
 ```{r}
-simple_bias <- ggplot(draws_sim_sim) +
-  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+ggplot(draws_simple_s) +
+  geom_density(aes(inv_bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$bias[1]) +
-  theme_bw() + 
-  xlim(-1,1)
-
-simple_bias
+  theme_bw() 
 
 ```
 
@@ -268,7 +265,7 @@ ggplot(draws_simple, aes(.iteration, sd_prior, group = .chain, color = .chain)) 
 
 ```{r by individual participants}
 ggplot(draws_simple) +
-  geom_density(aes(bias), alpha = 0.6, fill = "darkolivegreen4") +
+  geom_density(aes(inv_bias), alpha = 0.6, fill = "darkolivegreen4") +
   geom_density(aes(bias_prior), alpha = 0.6, fill = "pink") +
   #geom_vline(xintercept = sim_data_weightB$bias[1]) +
   theme_bw() + 
